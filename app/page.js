@@ -1,6 +1,7 @@
 "use client";
 import Todo from "@/components/Todo";
-import { useState } from "react";
+import axios from "axios";
+import { useEffect, useState } from "react";
 import { ToastContainer, toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 
@@ -9,6 +10,37 @@ export default function Home() {
     title: "",
     description: "",
   });
+
+  const [todoData, setTodoData] = useState([]);
+
+  const fetchTodos = async () => {
+    const response = await axios('/api');
+    setTodoData(response.data.todos);
+  };
+
+  useEffect( () => {
+    fetchTodos();
+  }, []);
+
+  const deleteTodo = async (id) => {
+    const response = await axios.delete('/api', {
+      params: {
+        mongoId: id
+      }
+    })
+    toast.success(response.data.msg);
+    fetchTodos();
+  };
+
+  const completeTodo = async (id) => {
+    const response = await axios.put('/api', {}, {
+      params: {
+        mongoId: id
+      }
+    })
+    toast.success(response.data.msg);
+    fetchTodos();
+  }
 
   const onChangeHandler = (e) => {
     const name = e.target.name;
@@ -20,9 +52,13 @@ export default function Home() {
   const onSubmitHandler = async (e) => {
     e.preventDefault();
     try {
-
-
-      toast.success("Success");
+      const response = await axios.post('/api', formData);
+      toast.success(response.data.msg);
+      setFormData({
+        title: "",
+        description: "",
+      });
+      fetchTodos();
     } catch (error) {
       toast.error("Error");
     }
@@ -80,9 +116,11 @@ export default function Home() {
             </tr>
           </thead>
           <tbody>
-            <Todo />
-            <Todo />
-            <Todo />
+            {
+              todoData.map((item, index) => {
+                return <Todo key={index} id={index} title={item.title} description={item.description} complete={item.isCompleted} mongoId={item._id} deleteTodo={deleteTodo} completeTodo={completeTodo} />
+              })
+            }
           </tbody>
         </table>
       </div>
